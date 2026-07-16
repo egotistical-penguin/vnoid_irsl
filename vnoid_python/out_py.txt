@@ -1,0 +1,763 @@
+SteppingController initialized
+00 footstep(pre)
+steps[0]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.700000 )
+steps[1]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+00 footstep(after Plan)
+steps[0]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.700000 )
+steps[1]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+00 footstep(after GenDCM)
+steps[0]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	0
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.700000 )
+steps[1]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.700000 )
+
+footstep(pre)
+steps[0]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	0
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.700000 )
+steps[1]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.700000 )
+steps[2]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[3]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[4]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[5]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[6]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[7]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+footstep(after Plan)
+steps[0]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	0
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.700000 )
+steps[1]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.700000 )
+steps[2]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[3]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.100000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[4]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.200000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.100000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[5]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.200000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.300000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[6]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.400000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.300000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+steps[7]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.400000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.400000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.000000 )
+footstep(after GenDCM)
+steps[0]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	0
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(-0.000510, 0.002055, 0.000000 )
+footstep.steps[i].dcm:	(0.000000, 0.000000, 0.700000 )
+steps[1]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	0
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.002802, -0.011291, 0.700000 )
+steps[2]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.000000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].dcm:	(0.018193, -0.073317, 0.700000 )
+steps[3]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.000000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.100000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.100000, 0.100000, 0.000000 )
+footstep.steps[i].dcm:	(0.118136, 0.073270, 0.700000 )
+steps[4]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.200000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.100000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.200000, -0.100000, 0.000000 )
+footstep.steps[i].dcm:	(0.217771, -0.073579, 0.700000 )
+steps[5]
+footstep.steps[i].stride:	0.100000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.200000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.300000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.300000, 0.100000, 0.000000 )
+footstep.steps[i].dcm:	(0.315400, 0.071572, 0.700000 )
+steps[6]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	0
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.400000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.300000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.400000, -0.100000, 0.000000 )
+footstep.steps[i].dcm:	(0.400000, -0.084600, 0.700000 )
+steps[7]
+footstep.steps[i].stride:	0.000000
+footstep.steps[i].sway:	0.000000
+footstep.steps[i].spacing:	0.200000
+footstep.steps[i].turn:	0.000000
+footstep.steps[i].climb:	0.000000
+footstep.steps[i].duration:	0.500000
+footstep.steps[i].side:	1
+footstep.steps[i].stepping:	1
+footstep.steps[i].tbegin:	0.000000
+footstep.steps[i].foot_pos[0]:	(0.400000, -0.100000, 0.000000 )
+footstep.steps[i].foot_pos[1]:	(0.400000, 0.100000, 0.000000 )
+footstep.steps[i].foot_angle[0]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].foot_angle[1]:	(0.000000, 0.000000, 0.000000 )
+footstep.steps[i].zmp:	(0.400000, 0.000000, 0.000000 )
+footstep.steps[i].dcm:	(0.400000, 0.000000, 0.700000 )
+
+
+===== PYTHON AFTER_GENERATE_DCM FOOTSTEPS =====
+step[0] side=0 stepping=0 duration=0.500000 tbegin=0.000000
+  rfoot=( 0.000000, -0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  lfoot=( 0.000000,  0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  zmp  =(-0.000510,  0.002055,  0.000000)
+  dcm  =( 0.000000,  0.000000,  0.700000)
+step[1] side=1 stepping=0 duration=0.500000 tbegin=0.000000
+  rfoot=( 0.000000, -0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  lfoot=( 0.000000,  0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  zmp  =( 0.000000,  0.000000,  0.000000)
+  dcm  =( 0.002802, -0.011291,  0.700000)
+step[2] side=0 stepping=1 duration=0.500000 tbegin=0.000000
+  rfoot=( 0.000000, -0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  lfoot=( 0.000000,  0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  zmp  =( 0.000000, -0.100000,  0.000000)
+  dcm  =( 0.018193, -0.073317,  0.700000)
+step[3] side=1 stepping=1 duration=0.500000 tbegin=0.000000
+  rfoot=( 0.000000, -0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  lfoot=( 0.100000,  0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  zmp  =( 0.100000,  0.100000,  0.000000)
+  dcm  =( 0.118136,  0.073270,  0.700000)
+step[4] side=0 stepping=1 duration=0.500000 tbegin=0.000000
+  rfoot=( 0.200000, -0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  lfoot=( 0.100000,  0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  zmp  =( 0.200000, -0.100000,  0.000000)
+  dcm  =( 0.217771, -0.073579,  0.700000)
+step[5] side=1 stepping=1 duration=0.500000 tbegin=0.000000
+  rfoot=( 0.200000, -0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  lfoot=( 0.300000,  0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  zmp  =( 0.300000,  0.100000,  0.000000)
+  dcm  =( 0.315400,  0.071572,  0.700000)
+step[6] side=0 stepping=1 duration=0.500000 tbegin=0.000000
+  rfoot=( 0.400000, -0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  lfoot=( 0.300000,  0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  zmp  =( 0.400000, -0.100000,  0.000000)
+  dcm  =( 0.400000, -0.084600,  0.700000)
+step[7] side=1 stepping=1 duration=0.500000 tbegin=0.000000
+  rfoot=( 0.400000, -0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  lfoot=( 0.400000,  0.100000,  0.000000) angle=( 0.000000,  0.000000,  0.000000)
+  zmp  =( 0.400000,  0.000000,  0.000000)
+  dcm  =( 0.400000,  0.000000,  0.700000)
+
+===== PYTHON INITIAL STATE count=0 time=0.000000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=0
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=0
+  com_ref   =( 0.000000,  0.000000,  0.700000)
+  dcm_ref   =( 0.000000,  0.000000,  0.700000)
+  dcm_target=( 0.000000,  0.000000,  0.700000)
+  zmp_ref   =( 0.000000,  0.000000,  0.000000)
+  zmp_target=( 0.000000,  0.000000,  0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+Warning: no foot force feedback. Check Choreonoid force sensor connection.
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=1 time=0.010000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000001, -0.000003,  0.700000)
+  dcm_ref   =( 0.000019, -0.000077,  0.700000)
+  dcm_target=( 0.000000,  0.000000,  0.700000)
+  zmp_ref   =(-0.000510,  0.002055, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=2 time=0.020000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000002, -0.000009,  0.700000)
+  dcm_ref   =( 0.000039, -0.000157,  0.700000)
+  dcm_target=( 0.000019, -0.000078,  0.700000)
+  zmp_ref   =(-0.000511,  0.002058, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=3 time=0.030000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000004, -0.000017,  0.700000)
+  dcm_ref   =( 0.000059, -0.000240,  0.700000)
+  dcm_target=( 0.000040, -0.000160,  0.700000)
+  zmp_ref   =(-0.000511,  0.002061, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=4 time=0.040000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000007, -0.000029,  0.700000)
+  dcm_ref   =( 0.000081, -0.000326,  0.700000)
+  dcm_target=( 0.000061, -0.000244,  0.700000)
+  zmp_ref   =(-0.000512,  0.002064, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=5 time=0.050000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000011, -0.000043,  0.700000)
+  dcm_ref   =( 0.000103, -0.000415,  0.700000)
+  dcm_target=( 0.000082, -0.000332,  0.700000)
+  zmp_ref   =(-0.000513,  0.002067, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=6 time=0.060000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000015, -0.000061,  0.700000)
+  dcm_ref   =( 0.000126, -0.000508,  0.700000)
+  dcm_target=( 0.000105, -0.000423,  0.700000)
+  zmp_ref   =(-0.000514,  0.002070, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=7 time=0.070000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000020, -0.000081,  0.700000)
+  dcm_ref   =( 0.000150, -0.000605,  0.700000)
+  dcm_target=( 0.000128, -0.000517,  0.700000)
+  zmp_ref   =(-0.000514,  0.002073, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=8 time=0.080000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000026, -0.000104,  0.700000)
+  dcm_ref   =( 0.000175, -0.000705,  0.700000)
+  dcm_target=( 0.000153, -0.000615,  0.700000)
+  zmp_ref   =(-0.000515,  0.002076, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=9 time=0.090000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000032, -0.000131,  0.700000)
+  dcm_ref   =( 0.000201, -0.000810,  0.700000)
+  dcm_target=( 0.000178, -0.000717,  0.700000)
+  zmp_ref   =(-0.000516,  0.002079, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=10 time=0.100000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000040, -0.000160,  0.700000)
+  dcm_ref   =( 0.000228, -0.000918,  0.700000)
+  dcm_target=( 0.000204, -0.000823,  0.700000)
+  zmp_ref   =(-0.000517,  0.002082, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=11 time=0.110000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000048, -0.000193,  0.700000)
+  dcm_ref   =( 0.000256, -0.001030,  0.700000)
+  dcm_target=( 0.000231, -0.000933,  0.700000)
+  zmp_ref   =(-0.000517,  0.002085, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=12 time=0.120000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000057, -0.000229,  0.700000)
+  dcm_ref   =( 0.000285, -0.001147,  0.700000)
+  dcm_target=( 0.000260, -0.001047,  0.700000)
+  zmp_ref   =(-0.000518,  0.002088, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=13 time=0.130000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000066, -0.000267,  0.700000)
+  dcm_ref   =( 0.000315, -0.001268,  0.700000)
+  dcm_target=( 0.000289, -0.001165,  0.700000)
+  zmp_ref   =(-0.000519,  0.002091, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=14 time=0.140000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000077, -0.000310,  0.700000)
+  dcm_ref   =( 0.000346, -0.001394,  0.700000)
+  dcm_target=( 0.000319, -0.001288,  0.700000)
+  zmp_ref   =(-0.000520,  0.002094, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=15 time=0.150000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000088, -0.000355,  0.700000)
+  dcm_ref   =( 0.000378, -0.001524,  0.700000)
+  dcm_target=( 0.000351, -0.001415,  0.700000)
+  zmp_ref   =(-0.000521,  0.002098, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=16 time=0.160000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000100, -0.000404,  0.700000)
+  dcm_ref   =( 0.000412, -0.001660,  0.700000)
+  dcm_target=( 0.000384, -0.001547,  0.700000)
+  zmp_ref   =(-0.000521,  0.002101, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=17 time=0.170000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000113, -0.000456,  0.700000)
+  dcm_ref   =( 0.000447, -0.001801,  0.700000)
+  dcm_target=( 0.000418, -0.001685,  0.700000)
+  zmp_ref   =(-0.000522,  0.002104, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=18 time=0.180000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000127, -0.000512,  0.700000)
+  dcm_ref   =( 0.000483, -0.001947,  0.700000)
+  dcm_target=( 0.000453, -0.001827,  0.700000)
+  zmp_ref   =(-0.000523,  0.002108, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=19 time=0.190000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000142, -0.000571,  0.700000)
+  dcm_ref   =( 0.000521, -0.002099,  0.700000)
+  dcm_target=( 0.000490, -0.001975,  0.700000)
+  zmp_ref   =(-0.000524,  0.002111, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)
+
+===== PYTHON AFTER_STEP_SIMULATION STATE count=20 time=0.200000 =====
+  rfoot_ref =( 0.000000, -0.100000,  0.000000) contact_ref=1
+  lfoot_ref =( 0.000000,  0.100000,  0.000000) contact_ref=1
+  com_ref   =( 0.000157, -0.000634,  0.700000)
+  dcm_ref   =( 0.000560, -0.002257,  0.700000)
+  dcm_target=( 0.000528, -0.002129,  0.700000)
+  zmp_ref   =(-0.000525,  0.002115, -0.000000)
+  zmp_target=(-0.000510,  0.002055, -0.000000)
+  force[0]  =( 0.000000,  0.000000,  0.000000)
+  force[1]  =( 0.000000,  0.000000,  0.000000)

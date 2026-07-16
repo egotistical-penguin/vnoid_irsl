@@ -46,6 +46,9 @@ class WalkingControl:
 
         self.no_dcm_gain=True
         self.no_dcm_derivative=True
+        self.use_cpp_stabilizer = False
+        self.state_callback = None
+        self._missing_contact_force_warned = False
 #>        self._init_genesis()
 #>
 #>    def _init_genesis(self):
@@ -219,7 +222,7 @@ class WalkingControl:
 
         self.stabilizer = Stabilizer()
 
-        print("✓ SteppingController initialized")
+        print("SteppingController initialized")
 
     def setup_controller(self, param=None, stride=0.1, spacing=0.2, duration=0.5, stepSize=4):
         self.param = param if param is not None else Param()
@@ -302,11 +305,65 @@ class WalkingControl:
             printStep(step, 'footstep.steps[i].')
         print("")
 
+    def set_state_callback(self, callback):
+        self.state_callback = callback
+
+    def _apply_external_state(self):
+        if self.state_callback is None:
+            return False
+        state = self.state_callback()
+        if state is None:
+            return False
+
+        if 'base_angle' in state:
+            self.base.angle = np.asarray(state['base_angle'], dtype=float)
+        if 'base_angvel' in state:
+            self.base.angvel = np.asarray(state['base_angvel'], dtype=float)
+        if 'com_pos' in state:
+            com_pos = np.asarray(state['com_pos'], dtype=float)
+            self.centroid.com_vel = (com_pos - self.centroid.com_pos) / self.timer.dt
+            self.centroid.com_pos = com_pos
+            self.centroid.dcm = self.centroid.com_pos + self.param.T * self.centroid.com_vel
+        if 'com_vel' in state:
+            self.centroid.com_vel = np.asarray(state['com_vel'], dtype=float)
+            self.centroid.dcm = self.centroid.com_pos + self.param.T * self.centroid.com_vel
+        if 'foot_force' in state:
+            for i, force in enumerate(state['foot_force'][:2]):
+                self.feet[i].force = np.asarray(force, dtype=float)
+        if 'foot_moment' in state:
+            for i, moment in enumerate(state['foot_moment'][:2]):
+                self.feet[i].moment = np.asarray(moment, dtype=float)
+        return True
+
+    def _has_required_contact_feedback(self):
+        has_contact_ref = False
+        for foot in self.feet:
+            if not foot.contact_ref:
+                continue
+            has_contact_ref = True
+            if foot.force is None:
+                return False
+            if np.linalg.norm(foot.force) <= 1.0e-12:
+                return False
+        return has_contact_ref
+        
+
+    def _warn_missing_contact_forces(self):
+        if self._missing_contact_force_warned:
+            return
+        print("Warning: no foot force feedback. Check Choreonoid force sensor connection.")
+        self._missing_contact_force_warned = True
+
     def step_simulation(self):
         """シミュレーションを1ステップ進める"""
         try:
             if hasattr(self, 'stepping_controller') and self.stepping_controller:
                 ##self.timer.time = self.time
+
+                if self.use_cpp_stabilizer:
+                    self._apply_external_state()
+                    if not self._has_required_contact_feedback():
+                        self._warn_missing_contact_forces()
 
                 # 軌道更新
                 stepping = self.stepping_controller.update(
@@ -325,8 +382,11 @@ class WalkingControl:
                 # 決定論的（オープンループ）に歩行させるため、前回の出力を今回の参照としてフィードバック
                 #self.centroid.dcm_ref = self.centroid.dcm_target.copy()
                 #self.centroid.zmp_ref = self.centroid.zmp_target.copy()
-                self.stabilizer.CalcDcmDynamicsSimple(self.timer, self.param, self.centroid,
-                                                      self.no_dcm_gain, self.no_dcm_derivative)
+                if self.use_cpp_stabilizer:
+                    self.stabilizer.Update(self.timer, self.param, self.centroid, self.base, self.feet)
+                else:
+                    self.stabilizer.CalcDcmDynamicsSimple(self.timer, self.param, self.centroid,
+                                                          self.no_dcm_gain, self.no_dcm_derivative)
 
         except Exception as e:
             print(f"Warning in stepping controller: {e}")
@@ -439,4 +499,4 @@ class WalkingControl:
 #>            if self.time > duration:
 #>                break
 #>
-#>        print(f"\n✓ Simulation completed! Total time: {self.time:.2f} s")    
+#>        print(f"\n✓ Simulation completed! Total time: {self.time:.2f} s")

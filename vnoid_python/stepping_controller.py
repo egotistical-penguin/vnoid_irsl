@@ -51,8 +51,18 @@ class Centroid:
             self.zmp_ref = np.array([0.0, 0.0, 0.0])
         if self.zmp_target is None:
             self.zmp_target = np.array([0.0, 0.0, 0.0])
+        if self.force_ref is None:
+            self.force_ref = np.array([0.0, 0.0, 0.0])
+        if self.moment_ref is None:
+            self.moment_ref = np.array([0.0, 0.0, 0.0])
+        if self.zmp is None:
+            self.zmp = np.array([0.0, 0.0, 0.0])
+        if self.dcm is None:
+            self.dcm = np.array([0.0, 0.0, 0.0])
         if self.com_pos_ref is None:
             self.com_pos_ref = np.array([0.0, 0.0, 0.0])
+        if self.com_pos is None:
+            self.com_pos = np.array([0.0, 0.0, 0.0])
         if self.com_vel_ref is None:
             self.com_vel_ref = np.array([0.0, 0.0, 0.0])
         if self.com_acc_ref is None:
@@ -78,6 +88,10 @@ class Base:
     angacc_ref: np.ndarray = None #/< reference angular acceleration
 
     def __post_init__(self):
+        if self.pos is None:
+            self.pos = np.array([0.0, 0.0, 0.0])
+        if self.pos_ref is None:
+            self.pos_ref = np.array([0.0, 0.0, 0.0])
         if self.angle is None:
             self.angle = np.array([0.0, 0.0, 0.0])
         if self.angle_ref is None:
@@ -86,6 +100,20 @@ class Base:
             self.ori = R.from_euler('xyz', [0, 0, 0])
         if self.ori_ref is None:
             self.ori_ref = R.from_euler('xyz', [0, 0, 0])
+        if self.vel_ref is None:
+            self.vel_ref = np.array([0.0, 0.0, 0.0])
+        if self.angvel is None:
+            self.angvel = np.array([0.0, 0.0, 0.0])
+        if self.angvel_ref is None:
+            self.angvel_ref = np.array([0.0, 0.0, 0.0])
+        if self.acc is None:
+            self.acc = np.array([0.0, 0.0, 0.0])
+        if self.acc_ref is None:
+            self.acc_ref = np.array([0.0, 0.0, 0.0])
+        if self.angacc is None:
+            self.angacc = np.array([0.0, 0.0, 0.0])
+        if self.angacc_ref is None:
+            self.angacc_ref = np.array([0.0, 0.0, 0.0])
 
 
 @dataclass
@@ -95,6 +123,22 @@ class Foot:
     angle_ref: np.ndarray = None     # 参考角度 [roll, pitch, yaw]
     ori_ref: R = None                # 参考向き
     contact_ref: bool = False        # 接触フラグ
+    pos: np.ndarray = None
+    angle: np.ndarray = None
+    ori: R = None
+    vel_ref: np.ndarray = None
+    angvel_ref: np.ndarray = None
+    acc_ref: np.ndarray = None
+    angacc_ref: np.ndarray = None
+    force: np.ndarray = None
+    force_ref: np.ndarray = None
+    moment: np.ndarray = None
+    moment_ref: np.ndarray = None
+    zmp: np.ndarray = None
+    zmp_ref: np.ndarray = None
+    contact: bool = False
+    balance: float = 0.0
+    balance_ref: float = 0.0
 #>bool        contact;      ///< current contact state (true if foot is in contact with the ground)
 #>bool        contact_ref;  ///< reference contact state
 #>double      balance;      ///< current balance ratio [0.0, 1.0].  indicates the ratio of vertical reaction force applied to this foot
@@ -119,10 +163,36 @@ class Foot:
     def __post_init__(self):
         if self.pos_ref is None:
             self.pos_ref = np.array([0.0, 0.0, 0.0])
+        if self.pos is None:
+            self.pos = np.array([0.0, 0.0, 0.0])
         if self.angle_ref is None:
             self.angle_ref = np.array([0.0, 0.0, 0.0])
+        if self.angle is None:
+            self.angle = np.array([0.0, 0.0, 0.0])
         if self.ori_ref is None:
-            self.ori_ref = R.from_euler('xyz', [0, 0, 0])
+            self.ori_ref = R.from_euler("xyz", [0, 0, 0]).as_quat(scalar_first=True)
+        if self.ori is None:
+            self.ori = R.from_euler("xyz", [0, 0, 0]).as_quat(scalar_first=True)
+        if self.vel_ref is None:
+            self.vel_ref = np.array([0.0, 0.0, 0.0])
+        if self.angvel_ref is None:
+            self.angvel_ref = np.array([0.0, 0.0, 0.0])
+        if self.acc_ref is None:
+            self.acc_ref = np.array([0.0, 0.0, 0.0])
+        if self.angacc_ref is None:
+            self.angacc_ref = np.array([0.0, 0.0, 0.0])
+        if self.force is None:
+            self.force = np.array([0.0, 0.0, 0.0])
+        if self.force_ref is None:
+            self.force_ref = np.array([0.0, 0.0, 0.0])
+        if self.moment is None:
+            self.moment = np.array([0.0, 0.0, 0.0])
+        if self.moment_ref is None:
+            self.moment_ref = np.array([0.0, 0.0, 0.0])
+        if self.zmp is None:
+            self.zmp = np.array([0.0, 0.0, 0.0])
+        if self.zmp_ref is None:
+            self.zmp_ref = np.array([0.0, 0.0, 0.0])
 
 def fmtVec3(vec3):
     return f'({vec3[0]:.6f}, {vec3[1]:.6f}, {vec3[2]:.6f} )'

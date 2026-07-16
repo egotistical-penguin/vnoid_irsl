@@ -1,9 +1,18 @@
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
-# Note: FromRollPitchYawの実装は、使用する数学ライブラリ（scipy等）に合わせて適宜実装してください。
+
 def from_roll_pitch_yaw(rpy):
-    # ダミー関数: 実際には四元数（Quaternion）や回転行列を返すクラスを想定
-    pass
+    return R.from_euler("xyz", rpy)
+
+
+def rotate(ori, vec):
+    return ori.apply(vec)
+
+
+def inv_rotate(ori, vec):
+    return ori.inv().apply(vec)
+
 
 class Stabilizer:
     def __init__(self):
@@ -60,9 +69,11 @@ class Stabilizer:
 
             # 注: ori_ref がSciPy等のRotationオブジェクトの場合、
             # `ori_ref.apply(vector)` のように書き換える必要があるかもしれません。
-            centroid.zmp = (foot[0].balance * (foot[0].pos_ref + foot[0].ori_ref * foot[0].zmp) +
-                            foot[1].balance * (foot[1].pos_ref + foot[1].ori_ref * foot[1].zmp))
-
+            centroid.zmp = (
+                foot[0].balance * (foot[0].pos_ref + rotate(foot[0].ori_ref, foot[0].zmp))
+                + foot[1].balance * (foot[1].pos_ref + rotate(foot[1].ori_ref, foot[1].zmp))
+            )           
+            
     def CalcForceDistribution(self, param, centroid, foot):
         # switch based on contact state
         if not foot[0].contact_ref and not foot[1].contact_ref:
@@ -74,14 +85,14 @@ class Stabilizer:
         if foot[0].contact_ref and not foot[1].contact_ref:
             foot[0].balance_ref = 1.0
             foot[1].balance_ref = 0.0
-            foot[0].zmp_ref = foot[0].ori_ref.conjugate() * (centroid.zmp_ref - foot[0].pos_ref)
+            foot[0].zmp_ref = inv_rotate(foot[0].ori_ref, centroid.zmp_ref - foot[0].pos_ref)
             foot[1].zmp_ref = np.zeros(3, dtype=float)
 
         if not foot[0].contact_ref and foot[1].contact_ref:
             foot[0].balance_ref = 0.0
             foot[1].balance_ref = 1.0
             foot[0].zmp_ref = np.zeros(3, dtype=float)
-            foot[1].zmp_ref = foot[1].ori_ref.conjugate() * (centroid.zmp_ref - foot[1].pos_ref)
+            foot[1].zmp_ref = inv_rotate(foot[1].ori_ref, centroid.zmp_ref - foot[1].pos_ref)
 
         if foot[0].contact_ref and foot[1].contact_ref:
             b = np.zeros(2, dtype=float)
@@ -102,20 +113,16 @@ class Stabilizer:
             zmp_proj = b[0] * foot[0].pos_ref + b[1] * foot[1].pos_ref
             b2 = np.dot(b, b)
 
-            foot[0].zmp_ref = (b[0] / b2) * (foot[0].ori_ref.conjugate() * (centroid.zmp_ref - zmp_proj))
-            foot[1].zmp_ref = (b[1] / b2) * (foot[1].ori_ref.conjugate() * (centroid.zmp_ref - zmp_proj))
+            foot[0].zmp_ref = (b[0] / b2) * (inv_rotate(foot[0].ori_ref, centroid.zmp_ref - zmp_proj))
+            foot[1].zmp_ref = (b[1] / b2) * (inv_rotate(foot[1].ori_ref, centroid.zmp_ref - zmp_proj))
 
         # limit zmp
         for i in range(2):
             foot[i].zmp_ref = np.clip(foot[i].zmp_ref, param.zmp_min, param.zmp_max)
-
-        for i in range(2):
-            # force and moment to realize desired Zmp
-            foot[i].force_ref = foot[i].ori_ref.conjugate() * (foot[i].balance_ref * centroid.force_ref)
-
-            foot[i].moment_ref[0] =  foot[i].force_ref[2] * foot[i].zmp_ref[1]
+            foot[i].force_ref = inv_rotate(foot[i].ori_ref, foot[i].balance_ref * centroid.force_ref)
+            foot[i].moment_ref[0] = foot[i].force_ref[2] * foot[i].zmp_ref[1]
             foot[i].moment_ref[1] = -foot[i].force_ref[2] * foot[i].zmp_ref[0]
-            foot[i].moment_ref[2] =  foot[i].balance_ref  * centroid.moment_ref[2]
+            foot[i].moment_ref[2] = foot[i].balance_ref * centroid.moment_ref[2]
 
     def CalcBaseTilt(self, timer, param, base, theta, omega):
         # desired angular acceleration for regulating orientation (in local coordinate)
@@ -158,22 +165,20 @@ class Stabilizer:
 
         # limit recovery moment for safety
         Ld_local = np.clip(Ld_local, -self.recovery_moment_limit, self.recovery_moment_limit)
+        Ld = rotate(base.ori_ref, Ld_local)
+        delta = np.array([-(1.0 / (m * h)) * Ld[1], (1.0 / (m * h)) * Ld[0], 0.0], dtype=float)
 
-        # desired moment (in global coordinate)
-        Ld = base.ori_ref * Ld_local
+        centroid.zmp_ref = centroid.zmp_target + self.dcm_ctrl_gain * (
+            centroid.dcm_ref - centroid.dcm_target
+        )
 
-        # virtual disturbance applied to DCM dynamics to generate desired recovery moment
-        delta = np.array([-(1.0 / (m * h)) * Ld[1], (1.0 / (m * h)) * Ld[0], 0.0])
-
-        # calc zmp for regulating dcm
-        centroid.zmp_ref = centroid.zmp_target + self.dcm_ctrl_gain * (centroid.dcm_ref - centroid.dcm_target)
-
-        # project zmp inside support region
-        if (foot[0].contact_ref and not foot[1].contact_ref) or (not foot[0].contact_ref and foot[1].contact_ref):
+        if (foot[0].contact_ref and not foot[1].contact_ref) or (
+            not foot[0].contact_ref and foot[1].contact_ref
+        ):
             sup = 0 if foot[0].contact_ref else 1
-            zmp_local = foot[sup].ori_ref.conjugate() * (centroid.zmp_ref - foot[sup].pos_ref)
+            zmp_local = inv_rotate(foot[sup].ori_ref, centroid.zmp_ref - foot[sup].pos_ref)
             zmp_local = np.clip(zmp_local, param.zmp_min, param.zmp_max)
-            centroid.zmp_ref = foot[sup].pos_ref + foot[sup].ori_ref * zmp_local
+            centroid.zmp_ref = foot[sup].pos_ref + rotate(foot[sup].ori_ref, zmp_local)
 
         # calc DCM derivative
         dcm_d = (1.0 / T) * (centroid.dcm_ref - (centroid.zmp_ref + np.array([0.0, 0.0, h]))) + T * delta

@@ -1,0 +1,16 @@
+variable,axis,max_abs_diff,rmse
+com_ref,x,0.0,0.0
+com_ref,y,0.0,0.0
+com_ref,z,0.0,0.0
+dcm_ref,x,0.0,0.0
+dcm_ref,y,0.0,0.0
+dcm_ref,z,0.0,0.0
+dcm_target,x,0.0,0.0
+dcm_target,y,0.0,0.0
+dcm_target,z,0.0,0.0
+zmp_ref,x,0.0,0.0
+zmp_ref,y,0.0,0.0
+zmp_ref,z,0.0,0.0
+zmp_target,x,0.0,0.0
+zmp_target,y,0.0,0.0
+zmp_target,z,0.0,0.0

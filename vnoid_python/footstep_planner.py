@@ -122,12 +122,23 @@ class Footstep:
 
 @dataclass
 class Param:
-    """歩行パラメータ"""
-    com_height: float = 0.7  # CoM の高さ
-    T: float = 1.0           # 時定数
+    """歩行パラメータ (robot_base.h::Param の移植。移動制御に必要なフィールドのみ)"""
+    total_mass: float = 50.0
+    nominal_inertia: np.ndarray = np.array([20.0, 20.0, 5.0])  # inertia around CoM in x,y,z directions
+    com_height: float = 1.0  # CoM の高さ (C++デフォルトは1.0。歩行時は呼び出し側で上書きする)
     gravity: float = 9.8
+    T: float = 1.0           # 時定数 T = sqrt(com_height/gravity)
+    trunk_mass: float = 1.0
+    trunk_com: np.ndarray = np.array([0.0, 0.0, 0.0])
+    zmp_min: np.ndarray = np.array([0.0, 0.0, 0.0])
+    zmp_max: np.ndarray = np.array([0.0, 0.0, 0.0])
+
     def __post_init__(self):
-        self.T = math.sqrt( self.com_height/self.gravity )
+        self.Init()
+
+    def Init(self):
+        """Param::Init() の移植"""
+        self.T = math.sqrt(self.com_height / self.gravity)
 
 @dataclass
 class Ground:
