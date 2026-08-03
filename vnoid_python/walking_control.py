@@ -222,14 +222,35 @@ class WalkingControl:
 
         self.stabilizer = Stabilizer()
 
+        # Re-apply both sole references here because an old mojibake comment
+        # swallowed the original right-foot assignment.
+        self.feet[0].pos_ref = np.array([0.0, -spacing, 0.0])
+        self.feet[1].pos_ref = np.array([0.0,  spacing, 0.0])
+
         print("SteppingController initialized")
 
-    def setup_controller(self, param=None, stride=0.1, spacing=0.2, duration=0.5, stepSize=4):
+    def setup_controller(self, param=None, stride=0.1, spacing=0.2,
+                         duration=0.5, stepSize=4,
+                         initial_foot_pos=None, initial_foot_ori=None,
+                         initial_com_pos=None):
         self.param = param if param is not None else Param()
 
         self.footstep_planner = FootstepPlanner()
-        self._setup_stepping_controller()
-
+        self._setup_stepping_controller(spacing=0.5 * spacing)
+        if initial_foot_pos is not None:
+            for side in range(2):
+                self.feet[side].pos_ref = np.asarray(
+                    initial_foot_pos[side], dtype=float).copy()
+        if initial_foot_ori is not None:
+            for side in range(2):
+                self.feet[side].ori_ref = initial_foot_ori[side]
+                self.feet[side].angle_ref = np.asarray(
+                    initial_foot_ori[side].as_euler('xyz'), dtype=float)
+        if initial_com_pos is not None:
+            initial_com_pos = np.asarray(initial_com_pos, dtype=float).copy()
+            self.centroid.com_pos_ref = initial_com_pos.copy()
+            self.centroid.dcm_ref = initial_com_pos.copy()
+            self.centroid.dcm_target = initial_com_pos.copy()
         ## vnoid/controller/sample_controller/myrobot.cpp // init footsteps
         #>footstep.steps.push_back(Step(0.0, 0.0, 0.2, 0.0, 0.0, 0.5, 0));
         #>footstep.steps.push_back(Step(0.0, 0.0, 0.2, 0.0, 0.0, 0.5, 1));
@@ -247,6 +268,10 @@ class WalkingControl:
         lst.append( Step(stride=0.0, sway=0.0, spacing=spacing, turn=0.0, climb=0.0, duration=duration, side=1) ) #1
         lst[0].foot_pos[0] = self.feet[0].pos_ref;
         lst[0].foot_pos[1] = self.feet[1].pos_ref;
+        lst[0].foot_ori[0] = self.feet[0].ori_ref
+        lst[0].foot_ori[1] = self.feet[1].ori_ref
+        lst[0].foot_angle[0] = self.feet[0].angle_ref
+        lst[0].foot_angle[1] = self.feet[1].angle_ref
         lst[0].dcm = self.centroid.dcm_ref;
         self.footstep = Footstep(steps=lst)
         print('00 footstep(pre)')
@@ -282,7 +307,6 @@ class WalkingControl:
         #>footstep.steps.push_back(step);
         for i in range(stepSize):
             self.footstep.steps.append( Step(stride=stride, sway=0.0, spacing=spacing, turn=0.0, climb=0.0, duration=duration, side=0) )
-        self.footstep.steps.append( Step(stride=0.0, sway=0.0, spacing=spacing, turn=0.0, climb=0.0, duration=duration, side=0) ) ## finishing
         self.footstep.steps.append( Step(stride=0.0, sway=0.0, spacing=spacing, turn=0.0, climb=0.0, duration=duration, side=0) ) ## finishing
 
         print('footstep(pre)')
@@ -335,24 +359,6 @@ class WalkingControl:
                 self.feet[i].moment = np.asarray(moment, dtype=float)
         return True
 
-    def _has_required_contact_feedback(self):
-        has_contact_ref = False
-        for foot in self.feet:
-            if not foot.contact_ref:
-                continue
-            has_contact_ref = True
-            if foot.force is None:
-                return False
-            if np.linalg.norm(foot.force) <= 1.0e-12:
-                return False
-        return has_contact_ref
-        
-
-    def _warn_missing_contact_forces(self):
-        if self._missing_contact_force_warned:
-            return
-        print("Warning: no foot force feedback. Check Choreonoid force sensor connection.")
-        self._missing_contact_force_warned = True
 
     def step_simulation(self):
         """シミュレーションを1ステップ進める"""
@@ -362,8 +368,6 @@ class WalkingControl:
 
                 if self.use_cpp_stabilizer:
                     self._apply_external_state()
-                    if not self._has_required_contact_feedback():
-                        self._warn_missing_contact_forces()
 
                 # 軌道更新
                 stepping = self.stepping_controller.update(
@@ -382,6 +386,19 @@ class WalkingControl:
                 # 決定論的（オープンループ）に歩行させるため、前回の出力を今回の参照としてフィードバック
                 #self.centroid.dcm_ref = self.centroid.dcm_target.copy()
                 #self.centroid.zmp_ref = self.centroid.zmp_target.copy()
+
+                # Enter a true double-support hold after the finite footstep
+                # queue ends.  Upstream leaves the previous single-support
+                # ZMP and swing contact state active after returning False.
+                if not stepping and len(self.footstep.steps) <= 1:
+                    support_center = 0.5 * (
+                        self.feet[0].pos_ref + self.feet[1].pos_ref)
+                    self.centroid.zmp_target = support_center.copy()
+                    self.centroid.dcm_target = support_center + np.array(
+                        [0.0, 0.0, self.param.com_height])
+                    self.feet[0].contact_ref = True
+                    self.feet[1].contact_ref = True
+
                 if self.use_cpp_stabilizer:
                     self.stabilizer.Update(self.timer, self.param, self.centroid, self.base, self.feet)
                 else:
@@ -394,6 +411,7 @@ class WalkingControl:
         #> self.scene.step()
         #self.time += self.dt
         self.timer.CountUp()
+        return stepping if 'stepping' in locals() else False
 
 #>    def _update_joint_targets_from_feet(self):
 #>        """足の目標位置・姿勢から逆運動学(IK)を計算して関節角を一括制御"""

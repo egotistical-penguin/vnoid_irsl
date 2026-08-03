@@ -5,7 +5,7 @@ Footstep Planner - C++ の footstep_planner.cpp を Python に変換
 
 import numpy as np
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 from scipy.spatial.transform import Rotation as R
 ## TODO  R => coordinates
@@ -57,6 +57,7 @@ class Step:
         return Step(side=self.side, stride=self.stride, sway=self.sway, turn=self.turn, spacing=self.spacing,
                     climb=self.climb, duration=self.duration, tbegin=self.tbegin, stepping=self.stepping,
                     foot_pos=np.array(self.foot_pos), foot_angle=np.array(self.foot_angle),
+                    foot_ori=[R.from_quat(ori.as_quat()) for ori in self.foot_ori],
                     dcm=np.array(self.dcm), zmp=np.array(self.zmp) )
 
 def fmtVec3(vec3):
@@ -124,14 +125,15 @@ class Footstep:
 class Param:
     """歩行パラメータ (robot_base.h::Param の移植。移動制御に必要なフィールドのみ)"""
     total_mass: float = 50.0
-    nominal_inertia: np.ndarray = np.array([20.0, 20.0, 5.0])  # inertia around CoM in x,y,z directions
+    nominal_inertia: np.ndarray = field(
+        default_factory=lambda: np.array([20.0, 20.0, 5.0]))
     com_height: float = 1.0  # CoM の高さ (C++デフォルトは1.0。歩行時は呼び出し側で上書きする)
     gravity: float = 9.8
     T: float = 1.0           # 時定数 T = sqrt(com_height/gravity)
     trunk_mass: float = 1.0
-    trunk_com: np.ndarray = np.array([0.0, 0.0, 0.0])
-    zmp_min: np.ndarray = np.array([0.0, 0.0, 0.0])
-    zmp_max: np.ndarray = np.array([0.0, 0.0, 0.0])
+    trunk_com: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    zmp_min: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    zmp_max: np.ndarray = field(default_factory=lambda: np.zeros(3))
 
     def __post_init__(self):
         self.Init()
