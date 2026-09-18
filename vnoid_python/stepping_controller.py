@@ -319,10 +319,12 @@ class SteppingController:
             stb0.duration = st0.duration
 
             stb0.foot_pos  [sup] = foot[sup].pos_ref.copy()
+            stb0.foot_pos  [sup][2] = st0.foot_pos[sup][2]
             stb0.foot_angle[sup] = np.array([0.0, 0.0, foot[sup].angle_ref[2]])
             stb0.foot_ori  [sup] = R.from_euler('xyz', stb0.foot_angle[sup])
 
             stb0.foot_pos  [swg] = foot[swg].pos_ref.copy()
+            stb0.foot_pos  [swg][2] = st0.foot_pos[swg][2]
             stb0.foot_angle[swg] = np.array([0.0, 0.0, foot[swg].angle_ref[2]])
             stb0.foot_ori  [swg] = R.from_euler('xyz', stb0.foot_angle[swg])
 
