@@ -36,6 +36,12 @@ class Stabilizer:
         self.recovery_moment_limit = 100.0
         self.dcm_deviation_limit = 0.3
 
+        # Optional feed-forward recovery moment from the posture-PD FEL.
+        # It is summed with the orientation-feedback recovery moment.
+        self.recovery_moment_ff_local = np.zeros(3, dtype=float)
+        self.last_recovery_moment_fb_local = np.zeros(3, dtype=float)
+        self.last_recovery_moment_total_local = np.zeros(3, dtype=float)
+
         # dpos, drot を numpy array (Vector3) として初期化
         self.dpos = [np.zeros(3, dtype=float) for _ in range(2)]
         self.drot = [np.zeros(3, dtype=float) for _ in range(2)]
@@ -163,9 +169,21 @@ class Stabilizer:
             param.nominal_inertia[2] * omegadd_local[2]
         ])
 
-        # limit recovery moment for safety
-        Ld_local = np.clip(Ld_local, -self.recovery_moment_limit, self.recovery_moment_limit)
-        Ld = rotate(base.ori_ref, Ld_local)
+        # Limit the feedback recovery moment first, then add the learned
+        # feed-forward moment at the same physical summing junction.  Limit
+        # the total again for safety.  The FEL never uses simulator truth.
+        Ld_local = np.clip(
+            Ld_local, -self.recovery_moment_limit,
+            self.recovery_moment_limit)
+        self.last_recovery_moment_fb_local[:] = Ld_local
+        ff_local = np.asarray(
+            self.recovery_moment_ff_local, dtype=float).reshape(3)
+        Ld_total_local = np.clip(
+            Ld_local + ff_local,
+            -self.recovery_moment_limit,
+            self.recovery_moment_limit)
+        self.last_recovery_moment_total_local[:] = Ld_total_local
+        Ld = rotate(base.ori_ref, Ld_total_local)
         delta = np.array([-(1.0 / (m * h)) * Ld[1], (1.0 / (m * h)) * Ld[0], 0.0], dtype=float)
 
         centroid.zmp_ref = centroid.zmp_target + self.dcm_ctrl_gain * (

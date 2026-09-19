@@ -48,6 +48,8 @@ class WalkingControl:
         self.no_dcm_derivative=True
         self.use_cpp_stabilizer = False
         self.state_callback = None
+        # Optional upper-layer FEL that assists the stabilizer posture PD.
+        self.posture_fel_controller = None
         self._missing_contact_force_warned = False
 #>        self._init_genesis()
 #>
@@ -400,7 +402,21 @@ class WalkingControl:
                     self.feet[1].contact_ref = True
 
                 if self.use_cpp_stabilizer:
-                    self.stabilizer.Update(self.timer, self.param, self.centroid, self.base, self.feet)
+                    posture_fel = self.posture_fel_controller
+                    if posture_fel is not None and posture_fel.enabled:
+                        posture_fel.before_stabilizer(
+                            self.timer, self.param, self.centroid, self.base,
+                            self.feet, self.stepping_controller,
+                            self.footstep_buffer, self.footstep,
+                            self.stabilizer)
+                    try:
+                        self.stabilizer.Update(
+                            self.timer, self.param, self.centroid,
+                            self.base, self.feet)
+                    finally:
+                        if posture_fel is not None and posture_fel.enabled:
+                            posture_fel.after_stabilizer(
+                                self.centroid, self.stabilizer)
                 else:
                     self.stabilizer.CalcDcmDynamicsSimple(self.timer, self.param, self.centroid,
                                                           self.no_dcm_gain, self.no_dcm_derivative)
