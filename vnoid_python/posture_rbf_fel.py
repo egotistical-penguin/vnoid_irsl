@@ -32,7 +32,11 @@ class PostureGaussianRBFFELController:
                   contact_guard_time=0.05,
                   coverage_threshold=1.0e-4,
                   coverage_sum_threshold=1.0e-6,
-                  payload_calibration_steps_per_side=2):
+                  payload_calibration_steps_per_side=1,
+                  payload_learning_gain_x=0.30,
+                  payload_learning_gain_y=0.20,
+                  payload_forgetting_factor=1.0,
+                  payload_min_samples_per_step=20):
         self.enabled = bool(enabled)
         self.mode = str(mode).lower()
         if self.mode not in ('baseline', 'payload', 'frozen'):
@@ -47,8 +51,20 @@ class PostureGaussianRBFFELController:
         self.coverage_threshold = max(0.0, float(coverage_threshold))
         self.coverage_sum_threshold = max(
             0.0, float(coverage_sum_threshold))
+        # Online payload adaptation is updated once at every completed
+        # support step.  The X/Y learning gains intentionally differ: lateral
+        # adaptation is kept more conservative because walking has a smaller
+        # stability margin in that direction.
         self.payload_calibration_steps_per_side = max(
             1, int(payload_calibration_steps_per_side))
+        self.payload_learning_gain = np.asarray([
+            max(0.0, float(payload_learning_gain_x)),
+            max(0.0, float(payload_learning_gain_y)),
+        ], dtype=float)
+        self.payload_forgetting_factor = float(np.clip(
+            payload_forgetting_factor, 0.0, 1.0))
+        self.payload_min_samples_per_step = max(
+            1, int(payload_min_samples_per_step))
 
         feature_dim = len(self.FEATURE_NAMES)
         # Geometry is axis-specific: [support_side, axis, ...].  This lets X
@@ -77,9 +93,10 @@ class PostureGaussianRBFFELController:
     def learning_enabled(self):
         if not self.enabled:
             return False
-        if self.mode == 'payload':
-            return not getattr(self, 'payload_ready', False)
-        return self.mode == 'baseline'
+        # Baseline and payload modes both learn continuously.  In payload
+        # mode a completed support step updates only that support side, and
+        # the resulting delta weights are used online on its next occurrence.
+        return self.mode in ('baseline', 'payload')
 
     def load_model(self, path):
         data = np.load(path, allow_pickle=False)
@@ -216,7 +233,14 @@ class PostureGaussianRBFFELController:
             (self.SIDE_COUNT, self.AXIS_COUNT), dtype=int)
         self.payload_calibration_steps = np.zeros(
             (self.SIDE_COUNT, self.AXIS_COUNT), dtype=int)
+        self.payload_ready_axis = np.zeros(
+            (self.SIDE_COUNT, self.AXIS_COUNT), dtype=bool)
+        # Aggregate compatibility flag: True once every side/axis has reached
+        # the configured warm-up count.  Unlike the old implementation, this
+        # flag no longer stops learning.
         self.payload_ready = False
+        self.last_payload_weight_update_norm = np.zeros(
+            self.AXIS_COUNT, dtype=float)
         self.last_feature = np.full(len(self.FEATURE_NAMES), np.nan)
         self.last_feature_normalized = np.full(
             (self.AXIS_COUNT, len(self.FEATURE_NAMES)), np.nan)
@@ -234,10 +258,23 @@ class PostureGaussianRBFFELController:
         self.last_sum_phi = 0.0
         self.last_teacher = np.zeros(2, dtype=float)
         self.last_raw_output = np.zeros(2, dtype=float)
+        self.last_unclipped_output = np.zeros(2, dtype=float)
         self.last_output = np.zeros(2, dtype=float)
         self.last_w0_output = np.zeros(2, dtype=float)
         self.last_delta_output = np.zeros(2, dtype=float)
         self.last_target = np.zeros(2, dtype=float)
+        self.last_output_saturated_axis = np.zeros(
+            self.AXIS_COUNT, dtype=bool)
+        self.last_output_saturation_amount = np.zeros(
+            self.AXIS_COUNT, dtype=float)
+        self.last_anti_windup_blocked_axis = np.zeros(
+            self.AXIS_COUNT, dtype=bool)
+        self.anti_windup_blocked_samples = np.zeros(
+            self.AXIS_COUNT, dtype=int)
+        self._step_anti_windup_blocked_samples = np.zeros(
+            self.AXIS_COUNT, dtype=int)
+        self.last_update_anti_windup_blocked_samples = np.zeros(
+            self.AXIS_COUNT, dtype=int)
         self.last_update_side = -1
         self.last_update_samples = 0
         self.last_walking_active = False
@@ -339,13 +376,32 @@ class PostureGaussianRBFFELController:
         return xz, psi, max_phi, sum_phi, False
 
     def _project_weights(self, weights):
-        # Normalized RBF activations form a convex combination.  Bounding
-        # every center output therefore bounds all in-distribution outputs,
-        # rather than relying only on a runtime saturation.
-        return np.clip(weights, -self.output_limit_nm,
-                       self.output_limit_nm)
+        # Weight clipping is intentionally disabled.  The RBF weights are
+        # allowed to represent the learned residual freely; only the actual
+        # feedforward moment injected into Stabilizer is saturated.
+        return np.asarray(weights, dtype=float).copy()
 
     def _commit_pending(self):
+        """Commit one completed support step.
+
+        Baseline mode keeps the previous cumulative ridge-regression behavior.
+
+        Payload mode uses a step-to-step FEL / ILC-style update.  During one
+        support step the current delta weights are frozen.  The remaining
+        stabilizer feedback is projected onto the RBF basis at the end of the
+        step, producing a residual correction in weight space:
+
+            dw_step = argmin ||Psi dw - tau_FB||^2 + lambda ||dw||^2
+
+        Then the learned payload weights are updated as
+
+            delta_w <- k_f * delta_w + k_l * dw_step
+
+        where k_f is a retention/forgetting factor and k_l is an axis-specific
+        learning gain.  The new weights are never injected halfway through a
+        step; they become effective on the next occurrence of that support
+        side.  This preserves a fixed feedforward predictor within each step.
+        """
         has_samples = bool(np.any(self._step_samples_axis > 0))
         if (not self.learning_enabled or self._active_side not in (0, 1)
                 or not self._step_was_actually_walking
@@ -360,54 +416,75 @@ class PostureGaussianRBFFELController:
                 'Completed-step side mismatch: key side {} != active side {}'
                 .format(self._active_key[0], side))
 
+        # Bookkeeping is updated for every valid completed step.
         for axis in range(self.AXIS_COUNT):
             samples = int(self._step_samples_axis[axis])
             if samples <= 0:
                 continue
-            self._xtx[side, axis] += self._step_xtx[axis]
-            self._xty[side, axis] += self._step_xty[axis]
             self.completed_valid_steps[side, axis] += 1
             self.training_samples_by_side[side, axis] += samples
 
-        # Count unique controller samples approximately once rather than once
-        # per axis.  Usually X/Y have the same number of valid samples.
         self.total_training_samples += int(np.max(self._step_samples_axis))
+        eye = np.eye(self.num_centers, dtype=float)
 
         if self.mode == 'payload':
-            # X/Y calibration progress is tracked independently.  The residual
-            # is enabled only after both axes on both support sides have enough
-            # completed valid steps.
+            updated = False
+            self.last_payload_weight_update_norm[:] = 0.0
+
             for axis in range(self.AXIS_COUNT):
-                if self._step_samples_axis[axis] > 0:
-                    self.payload_calibration_steps[side, axis] += 1
+                samples = int(self._step_samples_axis[axis])
+                if samples < self.payload_min_samples_per_step:
+                    continue
 
-            ready = bool(np.all(
-                self.payload_calibration_steps
-                >= self.payload_calibration_steps_per_side))
+                # Fit only the residual feedback observed during THIS step.
+                # Because delta_w was held fixed throughout the step, this is
+                # a correction to the currently active feedforward model.
+                matrix = self._step_xtx[axis] + self.ridge_lambda * eye
+                rhs = self._step_xty[axis]
+                try:
+                    correction = np.linalg.solve(matrix, rhs)
+                except np.linalg.LinAlgError:
+                    correction = np.linalg.lstsq(
+                        matrix, rhs, rcond=None)[0]
 
-            if ready and not self.payload_ready:
-                eye = np.eye(self.num_centers, dtype=float)
-                for fit_side in range(self.SIDE_COUNT):
-                    for axis in range(self.AXIS_COUNT):
-                        matrix = (self._xtx[fit_side, axis]
-                                  + self.ridge_lambda * eye)
-                        rhs = self._xty[fit_side, axis]
-                        try:
-                            solution = np.linalg.solve(matrix, rhs)
-                        except np.linalg.LinAlgError:
-                            solution = np.linalg.lstsq(
-                                matrix, rhs, rcond=None)[0]
-                        self.delta_w[fit_side, :, axis] = (
-                            self._project_weights(solution))
+                old = self.delta_w[side, :, axis].copy()
+                proposed = (
+                    self.payload_forgetting_factor * old
+                    + self.payload_learning_gain[axis] * correction
+                )
+                proposed = self._project_weights(proposed)
 
-                self.payload_ready = True
+                self.delta_w[side, :, axis] = proposed
+                self.last_payload_weight_update_norm[axis] = float(
+                    np.linalg.norm(proposed - old))
+
+                self.payload_calibration_steps[side, axis] += 1
+                if (self.payload_calibration_steps[side, axis]
+                        >= self.payload_calibration_steps_per_side):
+                    self.payload_ready_axis[side, axis] = True
+                updated = True
+
+            # This is only an aggregate status field.  Learning continues
+            # after it becomes True.
+            self.payload_ready = bool(np.all(self.payload_ready_axis))
+
+            if updated:
                 self.update_count += 1
                 self.last_update_side = int(side)
-                self.last_update_samples = int(sum(
-                    np.max(self.training_samples_by_side[s])
-                    for s in range(self.SIDE_COUNT)))
+                self.last_update_samples = int(
+                    np.max(self._step_samples_axis))
+                self.last_update_anti_windup_blocked_samples[:] = (
+                    self._step_anti_windup_blocked_samples)
+
         else:
-            eye = np.eye(self.num_centers, dtype=float)
+            # Baseline W0 learning: cumulative ridge regression as before.
+            for axis in range(self.AXIS_COUNT):
+                samples = int(self._step_samples_axis[axis])
+                if samples <= 0:
+                    continue
+                self._xtx[side, axis] += self._step_xtx[axis]
+                self._xty[side, axis] += self._step_xty[axis]
+
             updated = False
             for axis in range(self.AXIS_COUNT):
                 if self._step_samples_axis[axis] <= 0:
@@ -439,6 +516,8 @@ class PostureGaussianRBFFELController:
             (self.AXIS_COUNT, k, k), dtype=float)
         self._step_xty = np.zeros((self.AXIS_COUNT, k), dtype=float)
         self._step_samples_axis = np.zeros(self.AXIS_COUNT, dtype=int)
+        self._step_anti_windup_blocked_samples = np.zeros(
+            self.AXIS_COUNT, dtype=int)
 
     def before_stabilizer(self, timer, param, centroid, base, feet,
                           stepping_controller, footstep_buffer, footstep,
@@ -456,11 +535,15 @@ class PostureGaussianRBFFELController:
         self._current_train_valid[:] = False
         self.last_walking_active = False
         self.last_raw_output[:] = 0.0
+        self.last_unclipped_output[:] = 0.0
         self.last_output[:] = 0.0
         self.last_w0_output[:] = 0.0
         self.last_delta_output[:] = 0.0
         self.last_teacher[:] = 0.0
         self.last_target[:] = 0.0
+        self.last_output_saturated_axis[:] = False
+        self.last_output_saturation_amount[:] = 0.0
+        self.last_anti_windup_blocked_axis[:] = False
         if ref is None:
             self.last_feature[:] = np.nan
             self.last_feature_normalized[:] = np.nan
@@ -531,15 +614,28 @@ class PostureGaussianRBFFELController:
                 if psi is None or self.last_ood_axis[axis]:
                     continue
                 w0_output[axis] = psi.dot(self.w0[side, :, axis])
-                if self.mode != 'payload' or self.payload_ready:
+                if self.mode == 'payload':
+                    # Each side/axis becomes usable independently after its
+                    # first (or configured number of) completed learning step.
+                    # Learning continues after activation.
+                    if self.payload_ready_axis[side, axis]:
+                        delta_output[axis] = psi.dot(
+                            self.delta_w[side, :, axis])
+                else:
                     delta_output[axis] = psi.dot(
                         self.delta_w[side, :, axis])
 
-            total = np.clip(w0_output + delta_output,
-                            -self.output_limit_nm, self.output_limit_nm)
+            unclipped = w0_output + delta_output
+            total = np.clip(
+                unclipped, -self.output_limit_nm, self.output_limit_nm)
             self.last_w0_output[:] = w0_output
             self.last_delta_output[:] = delta_output
+            self.last_unclipped_output[:] = unclipped
             self.last_raw_output[:] = total
+            self.last_output_saturated_axis[:] = (
+                np.abs(unclipped) >= self.output_limit_nm - 1.0e-9)
+            self.last_output_saturation_amount[:] = np.abs(
+                unclipped - total)
 
             # Raw prediction is still logged while inactive, but only a true
             # VNOID walking step may inject effective FEL into Stabilizer.
@@ -606,19 +702,37 @@ class PostureGaussianRBFFELController:
 
         if np.all(np.isfinite(teacher)):
             if self.mode == 'baseline':
+                # W0 is refitted as the total feedforward command.
                 target = self.last_w0_output + teacher
             else:
-                # During payload calibration delta output is held at zero, so
-                # the remaining feedback itself is the residual FF to learn.
+                # Online payload mode performs an incremental FEL/ILC update:
+                # the current delta model is already active and frozen during
+                # this step, so the remaining FB torque is exactly the
+                # correction that should be learned for the next occurrence.
                 target = teacher
-            target = np.clip(target, -self.output_limit_nm,
-                             self.output_limit_nm)
 
             any_sample = False
             for axis in range(self.AXIS_COUNT):
                 psi = self._current_psi[axis]
                 if not self._current_train_valid[axis] or psi is None:
                     continue
+
+                # Conditional-integration anti-windup:
+                # if the actual FEL output is already at its +/- output limit
+                # and the remaining FB requests still more moment in the same
+                # direction, do not integrate that sample into the next weight
+                # update.  Opposite-sign FB is still learned because it drives
+                # the saturated output back toward the admissible region.
+                raw_output = self.last_unclipped_output[axis]
+                same_direction = (
+                    raw_output * teacher[axis] > 0.0)
+                if (self.last_output_saturated_axis[axis]
+                        and same_direction):
+                    self.last_anti_windup_blocked_axis[axis] = True
+                    self.anti_windup_blocked_samples[axis] += 1
+                    self._step_anti_windup_blocked_samples[axis] += 1
+                    continue
+
                 self._step_xtx[axis] += np.outer(psi, psi)
                 self._step_xty[axis] += psi * target[axis]
                 self._step_samples_axis[axis] += 1
@@ -686,9 +800,21 @@ class PostureGaussianRBFFELController:
             'posture_rbf_w0_output_x_Nm', 'posture_rbf_w0_output_y_Nm',
             'posture_rbf_delta_output_x_Nm',
             'posture_rbf_delta_output_y_Nm',
+            'posture_rbf_unclipped_output_x_Nm',
+            'posture_rbf_unclipped_output_y_Nm',
             'posture_rbf_raw_output_x_Nm',
             'posture_rbf_raw_output_y_Nm',
             'posture_rbf_output_x_Nm', 'posture_rbf_output_y_Nm',
+            'posture_rbf_output_saturated_x',
+            'posture_rbf_output_saturated_y',
+            'posture_rbf_output_saturation_amount_x_Nm',
+            'posture_rbf_output_saturation_amount_y_Nm',
+            'posture_rbf_anti_windup_blocked_x',
+            'posture_rbf_anti_windup_blocked_y',
+            'posture_rbf_anti_windup_blocked_samples_x',
+            'posture_rbf_anti_windup_blocked_samples_y',
+            'posture_rbf_last_update_anti_windup_blocked_samples_x',
+            'posture_rbf_last_update_anti_windup_blocked_samples_y',
             'posture_rbf_target_x_Nm', 'posture_rbf_target_y_Nm',
             'posture_rbf_updates', 'posture_rbf_step_train_samples',
             'posture_rbf_total_train_samples',
@@ -703,6 +829,15 @@ class PostureGaussianRBFFELController:
             'posture_rbf_w0_l2_Nm', 'posture_rbf_w0_absmax_Nm',
             'posture_rbf_delta_l2_Nm', 'posture_rbf_delta_absmax_Nm',
             'posture_rbf_payload_ready',
+            'posture_rbf_payload_ready_side0_x',
+            'posture_rbf_payload_ready_side0_y',
+            'posture_rbf_payload_ready_side1_x',
+            'posture_rbf_payload_ready_side1_y',
+            'posture_rbf_payload_learning_gain_x',
+            'posture_rbf_payload_learning_gain_y',
+            'posture_rbf_payload_forgetting_factor',
+            'posture_rbf_payload_weight_update_norm_x',
+            'posture_rbf_payload_weight_update_norm_y',
             'posture_rbf_payload_calib_steps_side0',
             'posture_rbf_payload_calib_steps_side1',
             'posture_rbf_calibration_ready',
@@ -717,8 +852,19 @@ class PostureGaussianRBFFELController:
             self.last_teacher[0], self.last_teacher[1],
             self.last_w0_output[0], self.last_w0_output[1],
             self.last_delta_output[0], self.last_delta_output[1],
+            self.last_unclipped_output[0], self.last_unclipped_output[1],
             self.last_raw_output[0], self.last_raw_output[1],
             self.last_output[0], self.last_output[1],
+            int(self.last_output_saturated_axis[0]),
+            int(self.last_output_saturated_axis[1]),
+            self.last_output_saturation_amount[0],
+            self.last_output_saturation_amount[1],
+            int(self.last_anti_windup_blocked_axis[0]),
+            int(self.last_anti_windup_blocked_axis[1]),
+            int(self.anti_windup_blocked_samples[0]),
+            int(self.anti_windup_blocked_samples[1]),
+            int(self.last_update_anti_windup_blocked_samples[0]),
+            int(self.last_update_anti_windup_blocked_samples[1]),
             self.last_target[0], self.last_target[1],
             self.update_count, int(np.max(self._step_samples_axis)),
             self.total_training_samples,
@@ -731,6 +877,15 @@ class PostureGaussianRBFFELController:
             self.last_update_side, self.last_update_samples,
             w0_l2, w0_abs, delta_l2, delta_abs,
             int(self.payload_ready),
+            int(self.payload_ready_axis[0, 0]),
+            int(self.payload_ready_axis[0, 1]),
+            int(self.payload_ready_axis[1, 0]),
+            int(self.payload_ready_axis[1, 1]),
+            self.payload_learning_gain[0],
+            self.payload_learning_gain[1],
+            self.payload_forgetting_factor,
+            self.last_payload_weight_update_norm[0],
+            self.last_payload_weight_update_norm[1],
             int(np.min(self.payload_calibration_steps[0])),
             int(np.min(self.payload_calibration_steps[1])),
             int(self.payload_ready),
