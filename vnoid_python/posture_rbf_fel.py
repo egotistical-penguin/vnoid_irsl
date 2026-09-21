@@ -12,18 +12,16 @@ class PostureGaussianRBFFELController:
     real VNOID support step changes, so the predictor is fixed within a step.
     """
 
+    # Compact posture predictor input.  X and Y use independent RBF bases
+    # (centers / sigma / activations), but both see only planned gait phase.
     FEATURE_NAMES = (
         'phase_sin',
         'phase_cos',
         'time_to_landing_norm',
-        'plan_dcm_local_x_m',
-        'plan_dcm_local_y_m',
-        'plan_zmp_local_x_m',
-        'plan_zmp_local_y_m',
-        'next_swing_local_x_m',
-        'next_swing_local_y_m',
     )
+    AXIS_NAMES = ('x', 'y')
     SIDE_COUNT = 2
+    AXIS_COUNT = 2
 
     def __init__(self):
         self.configure()
@@ -52,13 +50,19 @@ class PostureGaussianRBFFELController:
         self.payload_calibration_steps_per_side = max(
             1, int(payload_calibration_steps_per_side))
 
+        feature_dim = len(self.FEATURE_NAMES)
+        # Geometry is axis-specific: [support_side, axis, ...].  This lets X
+        # and Y choose different center placement / bandwidth even though both
+        # use the same three gait-phase features.
         self.feature_mean = np.zeros(
-            (self.SIDE_COUNT, len(self.FEATURE_NAMES)), dtype=float)
+            (self.SIDE_COUNT, self.AXIS_COUNT, feature_dim), dtype=float)
         self.feature_std = np.ones_like(self.feature_mean)
         self.centers = np.zeros(
-            (self.SIDE_COUNT, 0, len(self.FEATURE_NAMES)), dtype=float)
-        self.sigma = np.ones(self.SIDE_COUNT, dtype=float)
-        self.w0 = np.zeros((self.SIDE_COUNT, 0, 2), dtype=float)
+            (self.SIDE_COUNT, self.AXIS_COUNT, 0, feature_dim), dtype=float)
+        self.sigma = np.ones((self.SIDE_COUNT, self.AXIS_COUNT), dtype=float)
+        # Keep weights in [side, center, axis] form for straightforward output
+        # and for easier compatibility with model-generation scripts.
+        self.w0 = np.zeros((self.SIDE_COUNT, 0, self.AXIS_COUNT), dtype=float)
         self.delta_w = np.zeros_like(self.w0)
         self.model_ready = False
         if self.model_path:
@@ -67,7 +71,7 @@ class PostureGaussianRBFFELController:
 
     @property
     def num_centers(self):
-        return int(self.centers.shape[1]) if self.centers.ndim == 3 else 0
+        return int(self.centers.shape[2]) if self.centers.ndim == 4 else 0
 
     @property
     def learning_enabled(self):
@@ -82,49 +86,88 @@ class PostureGaussianRBFFELController:
         feature_names = tuple(str(x) for x in data['feature_names'].tolist())
         if feature_names != self.FEATURE_NAMES:
             raise ValueError(
-                'Posture RBF-FEL feature schema mismatch: {}'.format(
-                    feature_names))
+                'Posture RBF-FEL feature schema mismatch: {}. '
+                'This X/Y 3-feature controller requires {}'.format(
+                    feature_names, self.FEATURE_NAMES))
+
+        expected_dim = len(self.FEATURE_NAMES)
         mean = np.asarray(data['feature_mean'], dtype=float)
         std = np.asarray(data['feature_std'], dtype=float)
         centers = np.asarray(data['centers'], dtype=float)
-        sigma = np.asarray(data['sigma'], dtype=float).reshape(-1)
-        expected_dim = len(self.FEATURE_NAMES)
-        if mean.shape != (self.SIDE_COUNT, expected_dim):
+        sigma = np.asarray(data['sigma'], dtype=float)
+
+        # New preferred schema:
+        #   mean/std : [side, axis, feature]
+        #   centers  : [side, axis, center, feature]
+        #   sigma    : [side, axis]
+        # For convenience, a shared 3-feature geometry [side, ...] is also
+        # accepted and duplicated to X/Y.  Old 9-feature models are rejected
+        # above because their weights were fitted against a different basis.
+        if mean.shape == (self.SIDE_COUNT, expected_dim):
+            mean = np.repeat(mean[:, None, :], self.AXIS_COUNT, axis=1)
+        if mean.shape != (self.SIDE_COUNT, self.AXIS_COUNT, expected_dim):
             raise ValueError('Invalid Posture RBF-FEL feature_mean shape')
+
+        if std.shape == (self.SIDE_COUNT, expected_dim):
+            std = np.repeat(std[:, None, :], self.AXIS_COUNT, axis=1)
         if std.shape != mean.shape:
             raise ValueError('Invalid Posture RBF-FEL feature_std shape')
-        if (centers.ndim != 3 or centers.shape[0] != self.SIDE_COUNT
-                or centers.shape[2] != expected_dim
-                or centers.shape[1] <= 0):
+
+        if (centers.ndim == 3
+                and centers.shape[0] == self.SIDE_COUNT
+                and centers.shape[2] == expected_dim
+                and centers.shape[1] > 0):
+            centers = np.repeat(centers[:, None, :, :],
+                                self.AXIS_COUNT, axis=1)
+        if (centers.ndim != 4
+                or centers.shape[0] != self.SIDE_COUNT
+                or centers.shape[1] != self.AXIS_COUNT
+                or centers.shape[3] != expected_dim
+                or centers.shape[2] <= 0):
             raise ValueError('Invalid Posture RBF-FEL centers shape')
+
         if sigma.size == 1:
-            sigma = np.repeat(sigma, self.SIDE_COUNT)
-        if sigma.shape != (self.SIDE_COUNT,):
+            sigma = np.full((self.SIDE_COUNT, self.AXIS_COUNT),
+                            float(sigma.reshape(-1)[0]), dtype=float)
+        elif sigma.shape == (self.SIDE_COUNT,):
+            sigma = np.repeat(sigma[:, None], self.AXIS_COUNT, axis=1)
+        elif sigma.shape != (self.SIDE_COUNT, self.AXIS_COUNT):
             raise ValueError('Invalid Posture RBF-FEL sigma shape')
+
         if np.any(~np.isfinite(std)) or np.any(std <= 0.0):
             raise ValueError('Posture RBF-FEL feature_std must be positive')
         if np.any(~np.isfinite(sigma)) or np.any(sigma <= 0.0):
             raise ValueError('Posture RBF-FEL sigma must be positive')
 
-        self.feature_mean = mean
-        self.feature_std = std
-        self.centers = centers
-        self.sigma = sigma
-        shape = (self.SIDE_COUNT, centers.shape[1], 2)
+        self.feature_mean = mean.copy()
+        self.feature_std = std.copy()
+        self.centers = centers.copy()
+        self.sigma = sigma.copy()
+
+        k = centers.shape[2]
+        weight_shape = (self.SIDE_COUNT, k, self.AXIS_COUNT)
+
         if 'w0' in data:
             w0 = np.asarray(data['w0'], dtype=float)
-            if w0.shape != shape:
+            # Also accept [side, axis, center].
+            if w0.shape == (self.SIDE_COUNT, self.AXIS_COUNT, k):
+                w0 = np.transpose(w0, (0, 2, 1))
+            if w0.shape != weight_shape:
                 raise ValueError('Invalid Posture RBF-FEL w0 shape')
             self.w0 = w0.copy()
         else:
-            self.w0 = np.zeros(shape, dtype=float)
+            self.w0 = np.zeros(weight_shape, dtype=float)
+
         if 'delta_w' in data:
             delta_w = np.asarray(data['delta_w'], dtype=float)
-            if delta_w.shape != shape:
+            if delta_w.shape == (self.SIDE_COUNT, self.AXIS_COUNT, k):
+                delta_w = np.transpose(delta_w, (0, 2, 1))
+            if delta_w.shape != weight_shape:
                 raise ValueError('Invalid Posture RBF-FEL delta_w shape')
             self.delta_w = delta_w.copy()
         else:
-            self.delta_w = np.zeros(shape, dtype=float)
+            self.delta_w = np.zeros(weight_shape, dtype=float)
+
         self.model_ready = True
 
     def save_model(self, path=None):
@@ -137,6 +180,7 @@ class PostureGaussianRBFFELController:
         np.savez(
             target,
             feature_names=np.asarray(self.FEATURE_NAMES),
+            axis_names=np.asarray(self.AXIS_NAMES),
             feature_mean=self.feature_mean,
             feature_std=self.feature_std,
             centers=self.centers,
@@ -154,31 +198,37 @@ class PostureGaussianRBFFELController:
             elif self.mode == 'payload':
                 self.delta_w[:] = 0.0
         k = self.num_centers
-        self._xtx = np.zeros((self.SIDE_COUNT, k, k), dtype=float)
-        self._xty = np.zeros((self.SIDE_COUNT, k, 2), dtype=float)
+        self._xtx = np.zeros(
+            (self.SIDE_COUNT, self.AXIS_COUNT, k, k), dtype=float)
+        self._xty = np.zeros(
+            (self.SIDE_COUNT, self.AXIS_COUNT, k), dtype=float)
         self._active_key = None
         self._active_side = -1
-        self._step_xtx = np.zeros((k, k), dtype=float)
-        self._step_xty = np.zeros((k, 2), dtype=float)
-        self._step_samples = 0
+        self._step_xtx = np.zeros((self.AXIS_COUNT, k, k), dtype=float)
+        self._step_xty = np.zeros((self.AXIS_COUNT, k), dtype=float)
+        self._step_samples_axis = np.zeros(self.AXIS_COUNT, dtype=int)
         self._step_was_actually_walking = False
         self.update_count = 0
         self.total_training_samples = 0
         self.training_samples_by_side = np.zeros(
-            self.SIDE_COUNT, dtype=int)
+            (self.SIDE_COUNT, self.AXIS_COUNT), dtype=int)
         self.completed_valid_steps = np.zeros(
-            self.SIDE_COUNT, dtype=int)
+            (self.SIDE_COUNT, self.AXIS_COUNT), dtype=int)
         self.payload_calibration_steps = np.zeros(
-            self.SIDE_COUNT, dtype=int)
+            (self.SIDE_COUNT, self.AXIS_COUNT), dtype=int)
         self.payload_ready = False
         self.last_feature = np.full(len(self.FEATURE_NAMES), np.nan)
         self.last_feature_normalized = np.full(
-            len(self.FEATURE_NAMES), np.nan)
+            (self.AXIS_COUNT, len(self.FEATURE_NAMES)), np.nan)
         self.last_phase = np.nan
         self.last_time_to_landing = np.nan
         self.last_step_side = -1
         self.last_step_tbegin = np.nan
         self.last_guarded = True
+        self.last_ood_axis = np.ones(self.AXIS_COUNT, dtype=bool)
+        self.last_max_phi_axis = np.zeros(self.AXIS_COUNT, dtype=float)
+        self.last_sum_phi_axis = np.zeros(self.AXIS_COUNT, dtype=float)
+        # Aggregate fields are retained for existing CSV consumers.
         self.last_ood = True
         self.last_max_phi = 0.0
         self.last_sum_phi = 0.0
@@ -202,8 +252,8 @@ class PostureGaussianRBFFELController:
         self._previous_walking_effective_output = np.zeros(2, dtype=float)
         self._previous_walking_w0_output = np.zeros(2, dtype=float)
         self._previous_walking_delta_output = np.zeros(2, dtype=float)
-        self._current_psi = None
-        self._current_train_valid = False
+        self._current_psi = [None] * self.AXIS_COUNT
+        self._current_train_valid = np.zeros(self.AXIS_COUNT, dtype=bool)
         self._saved_recovery_moment_ff_local = None
 
     @staticmethod
@@ -232,7 +282,7 @@ class PostureGaussianRBFFELController:
 
     def _reference_feature(self, timer, stepping_controller,
                            footstep_buffer, footstep):
-        step, next_step = self._active_steps(footstep_buffer, footstep)
+        step, _ = self._active_steps(footstep_buffer, footstep)
         if step is None:
             return None
         side = int(step.side)
@@ -240,50 +290,42 @@ class PostureGaussianRBFFELController:
         tbegin = float(step.tbegin)
         if side not in (0, 1) or not np.isfinite(duration) or duration <= 0.0:
             return None
+
         phase = float(np.clip((float(timer.time) - tbegin) / duration,
                               0.0, 1.0))
         ttl = float(getattr(stepping_controller, 'time_to_landing',
                             duration * (1.0 - phase)))
         ttl_norm = float(np.clip(ttl / duration, 0.0, 1.0))
-        support = np.asarray(step.foot_pos[side], dtype=float)
-        orientation = step.foot_ori[side]
-        dcm_local = self._inverse_rotate(
-            orientation, np.asarray(step.dcm, dtype=float) - support)
-        zmp_local = self._inverse_rotate(
-            orientation, np.asarray(step.zmp, dtype=float) - support)
-        swing = 1 - side
-        swing_target = np.asarray(next_step.foot_pos[swing], dtype=float)
-        swing_local = self._inverse_rotate(
-            orientation, swing_target - support)
+
+        # Deliberately compact input: no DCM/ZMP/swing target.  Those nearly
+        # constant dimensions were making the Gaussian distance brittle across
+        # repeated nominal walks.
         x = np.array([
             np.sin(2.0 * np.pi * phase),
             np.cos(2.0 * np.pi * phase),
             ttl_norm,
-            dcm_local[0], dcm_local[1],
-            zmp_local[0], zmp_local[1],
-            swing_local[0], swing_local[1],
         ], dtype=float)
+
         if (not np.isfinite(phase) or not np.isfinite(ttl)
                 or not np.all(np.isfinite(x))):
             return None
+
         key = (side, round(tbegin, 9))
         guard = bool(
             (float(timer.time) - tbegin) < self.contact_guard_time
             or ttl < self.contact_guard_time)
-        # This is the exact flag logged as active_step_stepping in
-        # walk_sim_vnoid.py for the same active buffered step.  A Step object
-        # can exist before/after real walking, so Step existence alone is not
-        # a valid lifecycle gate.
         walking_active = bool(getattr(step, 'stepping', False))
         return key, side, phase, ttl, guard, walking_active, x
 
-    def _basis(self, side, x):
+    def _basis(self, side, axis, x):
         if not self.model_ready or self.num_centers <= 0:
             return None, None, 0.0, 0.0, True
-        xz = (x - self.feature_mean[side]) / self.feature_std[side]
-        diff = self.centers[side] - xz[None, :]
+
+        xz = ((x - self.feature_mean[side, axis])
+              / self.feature_std[side, axis])
+        diff = self.centers[side, axis] - xz[None, :]
         d2 = np.sum(diff * diff, axis=1)
-        sig = max(float(self.sigma[side]), 1.0e-9)
+        sig = max(float(self.sigma[side, axis]), 1.0e-9)
         phi = np.exp(-0.5 * d2 / (sig * sig))
         sum_phi = float(np.sum(phi))
         max_phi = float(np.max(phi)) if phi.size else 0.0
@@ -292,6 +334,7 @@ class PostureGaussianRBFFELController:
                    or not np.isfinite(sum_phi))
         if ood:
             return xz, None, max_phi, sum_phi, True
+
         psi = phi / max(sum_phi, 1.0e-12)
         return xz, psi, max_phi, sum_phi, False
 
@@ -303,66 +346,88 @@ class PostureGaussianRBFFELController:
                        self.output_limit_nm)
 
     def _commit_pending(self):
+        has_samples = bool(np.any(self._step_samples_axis > 0))
         if (not self.learning_enabled or self._active_side not in (0, 1)
                 or not self._step_was_actually_walking
-                or self._step_samples <= 0 or self.num_centers <= 0):
+                or not has_samples or self.num_centers <= 0):
             self._clear_step_accumulator()
             self._step_was_actually_walking = False
             return
+
         side = self._active_side
         if self._active_key is not None:
             assert int(self._active_key[0]) == int(side), (
                 'Completed-step side mismatch: key side {} != active side {}'
                 .format(self._active_key[0], side))
-        step_samples = int(self._step_samples)
-        self._xtx[side] += self._step_xtx
-        self._xty[side] += self._step_xty
-        self.completed_valid_steps[side] += 1
-        self.training_samples_by_side[side] += step_samples
-        self.total_training_samples += step_samples
 
-        # Payload adaptation is deliberately two-stage.  While calibrating,
-        # delta_w is not injected at all; the remaining stabilizer feedback is
-        # therefore measured under the same frozen W0 controller on every
-        # calibration step.  Once enough left/right support steps have been
-        # observed, fit the payload residual once and freeze it.  This avoids
-        # the self-referential "current FF + remaining FB" recursion that can
-        # move the closed-loop gait and make the learner chase its own effect.
+        for axis in range(self.AXIS_COUNT):
+            samples = int(self._step_samples_axis[axis])
+            if samples <= 0:
+                continue
+            self._xtx[side, axis] += self._step_xtx[axis]
+            self._xty[side, axis] += self._step_xty[axis]
+            self.completed_valid_steps[side, axis] += 1
+            self.training_samples_by_side[side, axis] += samples
+
+        # Count unique controller samples approximately once rather than once
+        # per axis.  Usually X/Y have the same number of valid samples.
+        self.total_training_samples += int(np.max(self._step_samples_axis))
+
         if self.mode == 'payload':
-            self.payload_calibration_steps[side] += 1
+            # X/Y calibration progress is tracked independently.  The residual
+            # is enabled only after both axes on both support sides have enough
+            # completed valid steps.
+            for axis in range(self.AXIS_COUNT):
+                if self._step_samples_axis[axis] > 0:
+                    self.payload_calibration_steps[side, axis] += 1
+
             ready = bool(np.all(
                 self.payload_calibration_steps
                 >= self.payload_calibration_steps_per_side))
+
             if ready and not self.payload_ready:
                 eye = np.eye(self.num_centers, dtype=float)
                 for fit_side in range(self.SIDE_COUNT):
-                    matrix = (self._xtx[fit_side]
-                              + self.ridge_lambda * eye)
-                    try:
-                        solution = np.linalg.solve(
-                            matrix, self._xty[fit_side])
-                    except np.linalg.LinAlgError:
-                        solution = np.linalg.lstsq(
-                            matrix, self._xty[fit_side], rcond=None)[0]
-                    self.delta_w[fit_side] = self._project_weights(solution)
+                    for axis in range(self.AXIS_COUNT):
+                        matrix = (self._xtx[fit_side, axis]
+                                  + self.ridge_lambda * eye)
+                        rhs = self._xty[fit_side, axis]
+                        try:
+                            solution = np.linalg.solve(matrix, rhs)
+                        except np.linalg.LinAlgError:
+                            solution = np.linalg.lstsq(
+                                matrix, rhs, rcond=None)[0]
+                        self.delta_w[fit_side, :, axis] = (
+                            self._project_weights(solution))
+
                 self.payload_ready = True
                 self.update_count += 1
                 self.last_update_side = int(side)
-                self.last_update_samples = int(
-                    np.sum(self.training_samples_by_side))
+                self.last_update_samples = int(sum(
+                    np.max(self.training_samples_by_side[s])
+                    for s in range(self.SIDE_COUNT)))
         else:
-            matrix = self._xtx[side] + self.ridge_lambda * np.eye(
-                self.num_centers, dtype=float)
-            try:
-                solution = np.linalg.solve(matrix, self._xty[side])
-            except np.linalg.LinAlgError:
-                solution = np.linalg.lstsq(
-                    matrix, self._xty[side], rcond=None)[0]
-            self.w0[side] = self._project_weights(solution)
-            self.update_count += 1
-            self.last_update_side = int(side)
-            self.last_update_samples = int(
-                self.training_samples_by_side[side])
+            eye = np.eye(self.num_centers, dtype=float)
+            updated = False
+            for axis in range(self.AXIS_COUNT):
+                if self._step_samples_axis[axis] <= 0:
+                    continue
+                matrix = self._xtx[side, axis] + self.ridge_lambda * eye
+                rhs = self._xty[side, axis]
+                try:
+                    solution = np.linalg.solve(matrix, rhs)
+                except np.linalg.LinAlgError:
+                    solution = np.linalg.lstsq(
+                        matrix, rhs, rcond=None)[0]
+                self.w0[side, :, axis] = self._project_weights(solution)
+                updated = True
+
+            if updated:
+                self.update_count += 1
+                self.last_update_side = int(side)
+                self.last_update_samples = int(
+                    np.max(self.training_samples_by_side[side]))
+
         self._clear_step_accumulator()
         self._step_was_actually_walking = False
         if self.save_path:
@@ -370,9 +435,10 @@ class PostureGaussianRBFFELController:
 
     def _clear_step_accumulator(self):
         k = self.num_centers
-        self._step_xtx = np.zeros((k, k), dtype=float)
-        self._step_xty = np.zeros((k, 2), dtype=float)
-        self._step_samples = 0
+        self._step_xtx = np.zeros(
+            (self.AXIS_COUNT, k, k), dtype=float)
+        self._step_xty = np.zeros((self.AXIS_COUNT, k), dtype=float)
+        self._step_samples_axis = np.zeros(self.AXIS_COUNT, dtype=int)
 
     def before_stabilizer(self, timer, param, centroid, base, feet,
                           stepping_controller, footstep_buffer, footstep,
@@ -386,8 +452,8 @@ class PostureGaussianRBFFELController:
 
         ref = self._reference_feature(
             timer, stepping_controller, footstep_buffer, footstep)
-        self._current_psi = None
-        self._current_train_valid = False
+        self._current_psi = [None] * self.AXIS_COUNT
+        self._current_train_valid[:] = False
         self.last_walking_active = False
         self.last_raw_output[:] = 0.0
         self.last_output[:] = 0.0
@@ -403,6 +469,9 @@ class PostureGaussianRBFFELController:
             self.last_step_side = -1
             self.last_step_tbegin = np.nan
             self.last_guarded = True
+            self.last_ood_axis[:] = True
+            self.last_max_phi_axis[:] = 0.0
+            self.last_sum_phi_axis[:] = 0.0
             self.last_ood = True
             self.last_max_phi = 0.0
             self.last_sum_phi = 0.0
@@ -428,28 +497,44 @@ class PostureGaussianRBFFELController:
         if walking_active:
             self._step_was_actually_walking = True
 
-        xz, psi, max_phi, sum_phi, ood = self._basis(side, x)
         self.last_feature[:] = x
-        if xz is None:
-            self.last_feature_normalized[:] = np.nan
-        else:
-            self.last_feature_normalized[:] = xz
+        self.last_feature_normalized[:] = np.nan
+
+        psi_by_axis = [None] * self.AXIS_COUNT
+        for axis in range(self.AXIS_COUNT):
+            xz, psi, max_phi, sum_phi, ood = self._basis(side, axis, x)
+            if xz is not None:
+                self.last_feature_normalized[axis] = xz
+            psi_by_axis[axis] = psi
+            self.last_ood_axis[axis] = ood
+            self.last_max_phi_axis[axis] = max_phi
+            self.last_sum_phi_axis[axis] = sum_phi
+
         self.last_phase = phase
         self.last_time_to_landing = ttl
         self.last_step_side = side
         self.last_step_tbegin = float(key[1])
         self.last_guarded = guard
-        self.last_ood = ood
         self.last_walking_active = bool(walking_active)
-        self.last_max_phi = max_phi
-        self.last_sum_phi = sum_phi
 
-        if self.enabled and psi is not None and not ood:
-            w0_output = psi.dot(self.w0[side])
-            if self.mode != 'payload' or self.payload_ready:
-                delta_output = psi.dot(self.delta_w[side])
-            else:
-                delta_output = np.zeros(2, dtype=float)
+        # Backward-compatible aggregate coverage values describe the worst
+        # axis, while axis-specific fields are logged separately.
+        self.last_ood = bool(np.any(self.last_ood_axis))
+        self.last_max_phi = float(np.min(self.last_max_phi_axis))
+        self.last_sum_phi = float(np.min(self.last_sum_phi_axis))
+
+        if self.enabled and any(psi is not None for psi in psi_by_axis):
+            w0_output = np.zeros(self.AXIS_COUNT, dtype=float)
+            delta_output = np.zeros(self.AXIS_COUNT, dtype=float)
+
+            for axis, psi in enumerate(psi_by_axis):
+                if psi is None or self.last_ood_axis[axis]:
+                    continue
+                w0_output[axis] = psi.dot(self.w0[side, :, axis])
+                if self.mode != 'payload' or self.payload_ready:
+                    delta_output[axis] = psi.dot(
+                        self.delta_w[side, :, axis])
+
             total = np.clip(w0_output + delta_output,
                             -self.output_limit_nm, self.output_limit_nm)
             self.last_w0_output[:] = w0_output
@@ -485,14 +570,17 @@ class PostureGaussianRBFFELController:
                 self._previous_walking_w0_output[:] = w0_output
                 self._previous_walking_delta_output[:] = delta_output
 
-            self._current_psi = psi.copy() if walking_active else None
-            self._current_train_valid = bool(
-                self.learning_enabled
-                and walking_active
-                and side in (0, 1)
-                and np.isfinite(phase)
-                and not guard
-                and not ood)
+            for axis, psi in enumerate(psi_by_axis):
+                self._current_psi[axis] = (
+                    psi.copy() if walking_active and psi is not None else None)
+                self._current_train_valid[axis] = bool(
+                    self.learning_enabled
+                    and walking_active
+                    and side in (0, 1)
+                    and np.isfinite(phase)
+                    and not guard
+                    and not self.last_ood_axis[axis]
+                    and psi is not None)
             if hasattr(stabilizer, 'recovery_moment_ff_local'):
                 ff = self._saved_recovery_moment_ff_local.copy()
                 ff[:2] += effective
@@ -516,8 +604,7 @@ class PostureGaussianRBFFELController:
             teacher = np.zeros(2, dtype=float)
             self.last_teacher[:] = 0.0
 
-        if (self._current_train_valid and self._current_psi is not None
-                and np.all(np.isfinite(teacher))):
+        if np.all(np.isfinite(teacher)):
             if self.mode == 'baseline':
                 target = self.last_w0_output + teacher
             else:
@@ -526,11 +613,19 @@ class PostureGaussianRBFFELController:
                 target = teacher
             target = np.clip(target, -self.output_limit_nm,
                              self.output_limit_nm)
-            psi = self._current_psi
-            self._step_xtx += np.outer(psi, psi)
-            self._step_xty += np.outer(psi, target)
-            self._step_samples += 1
-            self.last_target[:] = target
+
+            any_sample = False
+            for axis in range(self.AXIS_COUNT):
+                psi = self._current_psi[axis]
+                if not self._current_train_valid[axis] or psi is None:
+                    continue
+                self._step_xtx[axis] += np.outer(psi, psi)
+                self._step_xty[axis] += psi * target[axis]
+                self._step_samples_axis[axis] += 1
+                any_sample = True
+
+            if any_sample:
+                self.last_target[:] = target
 
         if hasattr(stabilizer, 'recovery_moment_ff_local'):
             saved = self._saved_recovery_moment_ff_local
@@ -568,6 +663,9 @@ class PostureGaussianRBFFELController:
             'posture_rbf_walking_active',
             'posture_rbf_guarded', 'posture_rbf_ood',
             'posture_rbf_max_phi', 'posture_rbf_sum_phi',
+            'posture_rbf_ood_x', 'posture_rbf_ood_y',
+            'posture_rbf_max_phi_x', 'posture_rbf_max_phi_y',
+            'posture_rbf_sum_phi_x', 'posture_rbf_sum_phi_y',
         ]
         values = [
             int(self.enabled), self.mode, int(self.model_ready),
@@ -576,6 +674,9 @@ class PostureGaussianRBFFELController:
             int(self.last_walking_active),
             int(self.last_guarded), int(self.last_ood),
             self.last_max_phi, self.last_sum_phi,
+            int(self.last_ood_axis[0]), int(self.last_ood_axis[1]),
+            self.last_max_phi_axis[0], self.last_max_phi_axis[1],
+            self.last_sum_phi_axis[0], self.last_sum_phi_axis[1],
         ]
         for name, value in zip(self.FEATURE_NAMES, self.last_feature):
             header.append('posture_rbf_feat_' + name)
@@ -619,19 +720,19 @@ class PostureGaussianRBFFELController:
             self.last_raw_output[0], self.last_raw_output[1],
             self.last_output[0], self.last_output[1],
             self.last_target[0], self.last_target[1],
-            self.update_count, self._step_samples,
+            self.update_count, int(np.max(self._step_samples_axis)),
             self.total_training_samples,
-            int(self.training_samples_by_side[0]),
-            int(self.training_samples_by_side[1]),
-            int(np.sum(self.completed_valid_steps)),
-            int(self.completed_valid_steps[0]),
-            int(self.completed_valid_steps[1]),
+            int(np.max(self.training_samples_by_side[0])),
+            int(np.max(self.training_samples_by_side[1])),
+            int(np.sum(np.min(self.completed_valid_steps, axis=1))),
+            int(np.min(self.completed_valid_steps[0])),
+            int(np.min(self.completed_valid_steps[1])),
             self.update_count,
             self.last_update_side, self.last_update_samples,
             w0_l2, w0_abs, delta_l2, delta_abs,
             int(self.payload_ready),
-            int(self.payload_calibration_steps[0]),
-            int(self.payload_calibration_steps[1]),
+            int(np.min(self.payload_calibration_steps[0])),
+            int(np.min(self.payload_calibration_steps[1])),
             int(self.payload_ready),
             int(self._transition_log_pending),
             self.last_transition_from_side,
