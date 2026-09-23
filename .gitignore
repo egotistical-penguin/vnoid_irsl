@@ -1,0 +1,4 @@
+vnoid_python/__pycache__/*
+*.csv
+*.npz
+*.mp4
