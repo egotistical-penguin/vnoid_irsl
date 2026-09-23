@@ -359,6 +359,9 @@ class WalkingControl:
         if 'foot_moment' in state:
             for i, moment in enumerate(state['foot_moment'][:2]):
                 self.feet[i].moment = np.asarray(moment, dtype=float)
+        if 'foot_pos' in state:
+            for i, position in enumerate(state['foot_pos'][:2]):
+                self.feet[i].pos = np.asarray(position, dtype=float)
         return True
 
 

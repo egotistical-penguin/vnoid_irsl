@@ -221,10 +221,217 @@ class SteppingController:
 
         self.debug = 4 #
         self.use_land_estimation = True
+        self.use_reference_x_reanchor = False
+        self.use_reference_y_reanchor = False
+        self.reference_x_offset = 0.0
+        self.reference_x_offset_target = 0.0
+        self.reference_x_offset_start = 0.0
+        self.reference_x_blend_elapsed = 0.0
+        self.reference_x_blend_duration = 0.0
+        self.reference_y_offset = 0.0
+        self.reference_y_offset_target = 0.0
+        self.reference_y_offset_start = 0.0
+        self.reference_y_blend_elapsed = 0.0
+        self.reference_y_blend_duration = 0.0
+        self.reference_x_reanchor_event_index = 0
+        self.reanchor_time_s = np.nan
+        self.reanchor_side = -1
+        self.reanchor_actual_x = np.nan
+        self.reanchor_nominal_x = np.nan
+        self.reanchor_error_x = np.nan
+        self.reanchor_actual_stride_x = np.nan
+        self.reanchor_nominal_stride_x = np.nan
+        self.reanchor_prev_actual_x = np.nan
+        self.reanchor_prev_nominal_x = np.nan
+        self.reanchor_actual_y = np.nan
+        self.reanchor_nominal_y = np.nan
+        self.reanchor_error_y = np.nan
+        self.reanchor_actual_stride_y = np.nan
+        self.reanchor_nominal_stride_y = np.nan
+        self.reanchor_prev_actual_y = np.nan
+        self.reanchor_prev_nominal_y = np.nan
+
+    def _shift_x(self, dx, footstep, footstep_buffer, centroid, foot):
+        """Translate the live walking reference frame along world X.
+
+        Only reference quantities are moved.  Actual robot state (``foot.pos``,
+        ``centroid.dcm`` / ``centroid.zmp`` / ``centroid.com_pos``) is left
+        untouched.  Applying one common translation preserves all relative
+        step geometry and therefore does not change nominal stride.
+        """
+        if abs(dx) <= eps:
+            return
+
+        for sequence in (footstep.steps, footstep_buffer.steps):
+            for step in sequence:
+                step.dcm[0] += dx
+                step.zmp[0] += dx
+                for side in range(2):
+                    step.foot_pos[side][0] += dx
+
+        centroid.dcm_ref[0] += dx
+        centroid.dcm_target[0] += dx
+        centroid.zmp_ref[0] += dx
+        centroid.zmp_target[0] += dx
+        centroid.com_pos_ref[0] += dx
+
+        for item in foot:
+            item.pos_ref[0] += dx
+
+    def _shift_y(self, dy, footstep, footstep_buffer, centroid, foot):
+        """Translate the live walking reference frame along world Y."""
+        if abs(dy) <= eps:
+            return
+
+        for sequence in (footstep.steps, footstep_buffer.steps):
+            for step in sequence:
+                step.dcm[1] += dy
+                step.zmp[1] += dy
+                for side in range(2):
+                    step.foot_pos[side][1] += dy
+
+        centroid.dcm_ref[1] += dy
+        centroid.dcm_target[1] += dy
+        centroid.zmp_ref[1] += dy
+        centroid.zmp_target[1] += dy
+        centroid.com_pos_ref[1] += dy
+
+        for item in foot:
+            item.pos_ref[1] += dy
+
+    def _advance_reference_x_reanchor(self, timer, footstep,
+                                      footstep_buffer, centroid, foot):
+        if not self.use_reference_x_reanchor:
+            return
+        if self.reference_x_blend_duration <= 0.0:
+            return
+        if self.reference_x_blend_elapsed >= self.reference_x_blend_duration:
+            return
+
+        self.reference_x_blend_elapsed = min(
+            self.reference_x_blend_duration,
+            self.reference_x_blend_elapsed + timer.dt)
+        alpha = self.reference_x_blend_elapsed / self.reference_x_blend_duration
+        # Smoothstep avoids a velocity discontinuity at both ends of the DSP.
+        alpha = alpha * alpha * (3.0 - 2.0 * alpha)
+        new_offset = (
+            self.reference_x_offset_start
+            + alpha * (self.reference_x_offset_target
+                       - self.reference_x_offset_start))
+        dx = new_offset - self.reference_x_offset
+        self._shift_x(dx, footstep, footstep_buffer, centroid, foot)
+        self.reference_x_offset = new_offset
+
+    def _advance_reference_y_reanchor(self, timer, footstep,
+                                      footstep_buffer, centroid, foot):
+        if not self.use_reference_y_reanchor:
+            return
+        if self.reference_y_blend_duration <= 0.0:
+            return
+        if self.reference_y_blend_elapsed >= self.reference_y_blend_duration:
+            return
+
+        self.reference_y_blend_elapsed = min(
+            self.reference_y_blend_duration,
+            self.reference_y_blend_elapsed + timer.dt)
+        alpha = self.reference_y_blend_elapsed / self.reference_y_blend_duration
+        alpha = alpha * alpha * (3.0 - 2.0 * alpha)
+        new_offset = (
+            self.reference_y_offset_start
+            + alpha * (self.reference_y_offset_target
+                       - self.reference_y_offset_start))
+        dy = new_offset - self.reference_y_offset
+        self._shift_y(dy, footstep, footstep_buffer, centroid, foot)
+        self.reference_y_offset = new_offset
+
+    def _start_reference_x_reanchor(self, timer, st0, sup, foot):
+        """Latch an absolute X-frame target from the newly landed support foot."""
+        if not self.use_reference_x_reanchor:
+            return
+
+        actual_x = float(foot[sup].pos[0])
+        shifted_planned_x = float(st0.foot_pos[sup][0])
+        if not np.isfinite(actual_x) or not np.isfinite(shifted_planned_x):
+            return
+
+        # The planned queue already contains reference_x_offset.  Remove it to
+        # recover the immutable nominal world-frame support position, then form
+        # an absolute target.  This prevents re-adding the same error every step.
+        nominal_x = shifted_planned_x - self.reference_x_offset
+        target = actual_x - nominal_x
+
+        if np.isfinite(self.reanchor_prev_actual_x):
+            actual_stride = actual_x - self.reanchor_prev_actual_x
+        else:
+            actual_stride = np.nan
+        if np.isfinite(self.reanchor_prev_nominal_x):
+            nominal_stride = nominal_x - self.reanchor_prev_nominal_x
+        else:
+            nominal_stride = np.nan
+
+        self.reference_x_offset_start = self.reference_x_offset
+        self.reference_x_offset_target = target
+        self.reference_x_blend_elapsed = 0.0
+        self.reference_x_blend_duration = max(self.dsp_duration, timer.dt)
+
+        self.reference_x_reanchor_event_index += 1
+        self.reanchor_time_s = float(timer.time)
+        self.reanchor_side = int(sup)
+        self.reanchor_actual_x = actual_x
+        self.reanchor_nominal_x = nominal_x
+        self.reanchor_error_x = actual_x - shifted_planned_x
+        self.reanchor_actual_stride_x = actual_stride
+        self.reanchor_nominal_stride_x = nominal_stride
+        self.reanchor_prev_actual_x = actual_x
+        self.reanchor_prev_nominal_x = nominal_x
+
+    def _start_reference_y_reanchor(self, timer, st0, sup, foot):
+        """Latch an absolute Y-frame target from the newly landed support foot."""
+        if not self.use_reference_y_reanchor:
+            return
+
+        actual_y = float(foot[sup].pos[1])
+        shifted_planned_y = float(st0.foot_pos[sup][1])
+        if not np.isfinite(actual_y) or not np.isfinite(shifted_planned_y):
+            return
+
+        nominal_y = shifted_planned_y - self.reference_y_offset
+        target = actual_y - nominal_y
+
+        if np.isfinite(self.reanchor_prev_actual_y):
+            actual_stride = actual_y - self.reanchor_prev_actual_y
+        else:
+            actual_stride = np.nan
+        if np.isfinite(self.reanchor_prev_nominal_y):
+            nominal_stride = nominal_y - self.reanchor_prev_nominal_y
+        else:
+            nominal_stride = np.nan
+
+        self.reference_y_offset_start = self.reference_y_offset
+        self.reference_y_offset_target = target
+        self.reference_y_blend_elapsed = 0.0
+        self.reference_y_blend_duration = max(self.dsp_duration, timer.dt)
+
+        self.reanchor_actual_y = actual_y
+        self.reanchor_nominal_y = nominal_y
+        self.reanchor_error_y = actual_y - shifted_planned_y
+        self.reanchor_actual_stride_y = actual_stride
+        self.reanchor_nominal_stride_y = nominal_stride
+        self.reanchor_prev_actual_y = actual_y
+        self.reanchor_prev_nominal_y = nominal_y
 
     def update(self, timer: Timer, param: Param, footstep: Footstep, footstep_buffer: Footstep, centroid: Centroid, base: Base, foot: List[Foot]):
         T = param.T
         offset = np.array([0.0, 0.0, param.com_height])
+        support_switched = False
+
+        # Apply only the incremental part of a previously latched re-anchor.
+        # This is O(number of remaining steps), runs for one DSP window after a
+        # landing event, and never regenerates the full trajectory at 1 kHz.
+        self._advance_reference_x_reanchor(
+            timer, footstep, footstep_buffer, centroid, foot)
+        self._advance_reference_y_reanchor(
+            timer, footstep, footstep_buffer, centroid, foot)
 
         ## *A*
         if self.debug > 2:
@@ -279,6 +486,7 @@ class SteppingController:
                 footstep_buffer.steps.append(Step(stride=0.0, sway=0.0, spacing=0.0, turn=0.0, climb=0.0, duration=0.5, side=0))
 
                 self.buffer_ready = False
+                support_switched = True
             else:
                 centroid.dcm_target = (stb0.zmp + offset) + alpha_ref * (stb0.dcm - (stb0.zmp + offset))
 
@@ -310,6 +518,9 @@ class SteppingController:
         swg = 1 - st0.side
 
         if not self.buffer_ready:
+            if support_switched:
+                self._start_reference_x_reanchor(timer, st0, sup, foot)
+                self._start_reference_y_reanchor(timer, st0, sup, foot)
             if self.debug > 1:
                 print("!buffer_ready")
             stb0.side = st0.side
